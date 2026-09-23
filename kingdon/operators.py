@@ -88,6 +88,9 @@ def gp(x: "MultiVector", y: "MultiVector") -> "MultiVector":
     :param y: Fully symbolic :class:`~kingdon.multivector.MultiVector`.
     :return: multivector with blade-string keys.
     """
+    if (backend := getattr(x.algebra, '_experimental_gp_backend', None)) is not None:
+        from kingdon.blade_experiment import gp_with_layout
+        return gp_with_layout(x, y, backend)
     return product(x, y)
 
 

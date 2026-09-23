@@ -133,6 +133,7 @@ class Algebra:
     pretty_blade: str = field(default='𝐞', repr=False, compare=False)
     pretty_digits: dict = field(default_factory=dict, init=False, repr=False, compare=False)  # TODO: this can be defined outside Algebra
     large: bool = field(default=None, repr=False, compare=False)
+    _experimental_gp: str | None = field(default=None, repr=False, compare=False)
     extra_types: InitVar[list | None] = None
     types: list = field(default_factory=list, repr=False, compare=False)
     _type_layouts: dict = field(default_factory=dict, init=False, repr=False, compare=False)
@@ -220,6 +221,19 @@ class Algebra:
             ))
 
         self.signs = DefaultKeyDict(self._compute_sign)
+
+        # Evidence-only GP dispatch; the ordinary path remains the default.
+        self._experimental_gp_backend = None
+        if self._experimental_gp is not None:
+            from kingdon.blade_experiment import OnePassStringBlades, LocalSupportBlades
+            backends = {
+                'one_pass_string': lambda: OnePassStringBlades.from_algebra(self),
+                'local_support': lambda: LocalSupportBlades.from_algebra(self),
+            }
+            try:
+                self._experimental_gp_backend = backends[self._experimental_gp]()
+            except KeyError:
+                raise ValueError(f'Unknown experimental GP backend: {self._experimental_gp!r}') from None
 
         if self.large is None:
             self.large = self.d > 6
